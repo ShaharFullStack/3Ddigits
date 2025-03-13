@@ -1,17 +1,32 @@
+/* Base styles and resets */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100vh;
+  background-color: #e6f0ff;
+  color: #333;
 }
 
+/* Canvas */
 #canvas {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
+/* Game UI container */
 #gameUI {
   position: absolute;
   bottom: 20px;
@@ -22,127 +37,282 @@ body {
   flex-direction: column;
   z-index: 10;
   pointer-events: none;
+  padding: 0 20px;
+  transition: all 0.3s ease;
 }
 
+/* Digits container */
 #digitsContainer {
   display: flex;
   justify-content: center;
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 10px;
+  flex-wrap: wrap;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 15px;
   pointer-events: auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
+/* Digit buttons */
 .digitButton {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   margin: 0 5px;
-  border: 2px solid #4285f4;
+  border: none;
   background-color: white;
   color: #4285f4;
-  font-size: 18px;
-  border-radius: 5px;
+  font-size: 20px;
+  font-weight: 600;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(66, 133, 244, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .digitButton:hover {
-  background-color: #e9f0fe;
+  background-color: #f0f7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(66, 133, 244, 0.3);
+}
+
+.digitButton:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(66, 133, 244, 0.2);
 }
 
 .digitButton.selected {
   background-color: #4285f4;
   color: white;
+  box-shadow: 0 3px 10px rgba(66, 133, 244, 0.4);
+}
+
+.digitButton.selected::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+  z-index: -1;
+  animation: pulse 2s infinite;
 }
 
 .digitButton.placed {
   background-color: #34a853;
-  border-color: #34a853;
   color: white;
   cursor: default;
+  box-shadow: 0 2px 5px rgba(52, 168, 83, 0.3);
 }
 
-/* Control buttons container and buttons removed */
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.05);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+}
 
+/* Progress bar */
 #progressBarContainer {
   width: 80%;
   max-width: 500px;
   height: 20px;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   border-radius: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   overflow: hidden;
   pointer-events: auto;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 #progressFill {
   height: 100%;
   width: 0%;
-  background-color: #34a853;
-  transition: width 0.3s;
+  background: linear-gradient(90deg, #34a853, #4cbd6c);
+  transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
 }
 
+#progressFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Reset button */
 #resetButton {
-  padding: 8px 15px;
+  padding: 10px 20px;
   background-color: #ea4335;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   pointer-events: auto;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(234, 67, 53, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 #resetButton:hover {
   background-color: #d33426;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(234, 67, 53, 0.4);
 }
 
+#resetButton:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 5px rgba(234, 67, 53, 0.3);
+}
+
+/* Message box */
 #messageBox {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   text-align: center;
   display: none;
   z-index: 20;
   pointer-events: auto;
+  max-width: 90%;
+  width: 400px;
+  animation: messageAppear 0.5s ease forwards;
+}
+
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 #messageBox h2 {
   color: #34a853;
   margin-top: 0;
+  font-size: 28px;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+#messageBox h2::after {
+  content: '🎮';
+  position: absolute;
+  top: -5px;
+  margin-left: 10px;
+  font-size: 24px;
+  animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-5px);
+  }
+}
+
+#messageBox p {
+  margin-bottom: 20px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: #555;
 }
 
 #closeMessage {
-  padding: 8px 15px;
+  padding: 10px 20px;
   background-color: #4285f4;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   margin-top: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(66, 133, 244, 0.3);
 }
 
+#closeMessage:hover {
+  background-color: #3367d6;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+}
+
+#closeMessage:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 5px rgba(66, 133, 244, 0.3);
+}
+
+/* Mobile controls */
 #mobileControls {
   position: absolute;
   top: 20px;
   right: 20px;
   display: none;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
   z-index: 10;
   pointer-events: auto;
 }
 
 .mobileButton {
-  width: 50px;
-  height: 50px;
-  background-color: rgba(255, 255, 255, 0.8);
-  border: 2px solid #4285f4;
+  width: 60px;
+  height: 60px;
+  background-color: rgba(255, 255, 255, 0.85);
+  border: none;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -150,81 +320,350 @@ body {
   font-size: 24px;
   color: #4285f4;
   cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.mobileButton:hover, .mobileButton:active {
+  background-color: rgba(240, 247, 255, 0.9);
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+#mobileCameraBtn {
+  position: relative;
+}
+
+#mobileCameraBtn::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  bottom: 5px;
+  right: 5px;
+  transition: all 0.3s ease;
+}
+
+#mobileCameraBtn.active::after {
+  background-color: #ffcc00;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
 }
 
 #instructionsButton {
   position: absolute;
   top: 20px;
   left: 20px;
-  background-color: rgba(255, 255, 255, 0.8);
-  border: 2px solid #4285f4;
+  background-color: rgba(255, 255, 255, 0.85);
+  border: none;
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 28px;
   color: #4285f4;
   cursor: pointer;
   z-index: 10;
   pointer-events: auto;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
 }
 
+#instructionsButton:hover, #instructionsButton:active {
+  background-color: rgba(240, 247, 255, 0.9);
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Mobile instructions */
 #mobileInstructions {
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   display: none;
-  z-index: 20;
+  z-index: 50;
   pointer-events: auto;
-  max-width: 80%;
-  max-height: 80%;
+  max-width: 90%;
+  max-height: 80vh;
   overflow-y: auto;
+  width: 500px;
+  animation: instructionsAppear 0.3s ease forwards;
+}
+
+@keyframes instructionsAppear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+#mobileInstructions::-webkit-scrollbar {
+  width: 8px;
+}
+
+#mobileInstructions::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+#mobileInstructions::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+#mobileInstructions::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+#mobileInstructions h2 {
+  color: #4285f4;
+  margin-top: 0;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 24px;
+  border-bottom: 2px solid #e6f0ff;
+  padding-bottom: 10px;
+}
+
+#mobileInstructions h3 {
+  color: #555;
+  margin: 15px 0 10px 0;
+  font-size: 18px;
+}
+
+#mobileInstructions ul {
+  list-style-type: none;
+  padding-left: 10px;
+}
+
+#mobileInstructions li {
+  margin-bottom: 10px;
+  padding-left: 25px;
+  position: relative;
+  line-height: 1.5;
+}
+
+#mobileInstructions li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #4285f4;
+  font-size: 20px;
+  top: -2px;
+}
+
+#mobileInstructions li strong {
+  color: #4285f4;
 }
 
 #closeMobileInstructions {
-  padding: 8px 15px;
+  padding: 10px 20px;
   background-color: #4285f4;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 3px 10px rgba(66, 133, 244, 0.3);
+}
+
+#closeMobileInstructions:hover {
+  background-color: #3367d6;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+}
+
+#closeMobileInstructions:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 5px rgba(66, 133, 244, 0.3);
+}
+
+/* Overlay for modal backgrounds */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 40;
+  display: none;
 }
 
 /* Media queries for responsive design */
 @media (max-width: 768px) {
   .digitButton {
-    width: 30px;
-    height: 30px;
-    margin: 0 3px;
-    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    margin: 0 4px;
+    font-size: 18px;
   }
   
   #progressBarContainer {
     width: 90%;
   }
+  
+  #messageBox {
+    width: 350px;
+    padding: 25px;
+  }
+  
+  #messageBox h2 {
+    font-size: 24px;
+  }
+  
+  #messageBox p {
+    font-size: 16px;
+  }
+  
+  .mobileButton, #instructionsButton {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+  
+  #mobileInstructions {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    top: 0;
+    left: 0;
+    transform: none;
+    animation: mobileInstructionsAppear 0.3s ease forwards;
+  }
+  
+  @keyframes mobileInstructionsAppear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }
 
 @media (max-width: 480px) {
   .digitButton {
-    width: 25px;
-    height: 25px;
-    margin: 0 2px;
-    font-size: 14px;
+    width: 35px;
+    height: 35px;
+    margin: 0 3px;
+    font-size: 16px;
   }
   
   #gameUI {
-    bottom: 10px;
+    bottom: 15px;
   }
   
   #progressBarContainer {
     height: 15px;
+    width: 95%;
+  }
+  
+  #resetButton {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  #messageBox {
+    width: 90%;
+    padding: 20px;
+  }
+  
+  #messageBox h2 {
+    font-size: 22px;
+  }
+  
+  #messageBox p {
+    font-size: 14px;
+  }
+  
+  .mobileButton, #instructionsButton {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+  
+  #mobileControls {
+    gap: 10px;
+    top: 15px;
+    right: 15px;
+  }
+  
+  #instructionsButton {
+    top: 15px;
+    left: 15px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  #digitsContainer, #progressBarContainer, .mobileButton, #instructionsButton {
+    background-color: rgba(50, 50, 70, 0.85);
+    border-color: rgba(80, 80, 100, 0.5);
+  }
+  
+  .digitButton {
+    background-color: #2a2a3a;
+    color: #4285f4;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  
+  .digitButton:hover {
+    background-color: #32324a;
+  }
+  
+  #messageBox, #mobileInstructions {
+    background-color: #2a2a3a;
+    color: #e0e0e0;
+  }
+  
+  #messageBox h2, #mobileInstructions h2 {
+    color: #4caf50;
+  }
+  
+  #messageBox p, #mobileInstructions p, #mobileInstructions li {
+    color: #e0e0e0;
+  }
+  
+  #mobileInstructions h3 {
+    color: #b0b0b0;
+  }
+  
+  #mobileInstructions {
+    border-bottom-color: #444;
+  }
+  
+  #progressBarContainer {
+    background-color: rgba(50, 50, 70, 0.85);
+  }
+  
+  .mobileButton, #instructionsButton {
+    color: #64b5f6;
   }
 }

@@ -5,7 +5,6 @@ import { SceneManager } from './sceneManager.js';
 import { TextureManager } from './texture-manager.js';
 import { UIManager } from './uiManager.js';
 
-
 class GameManager {
   constructor() {
     this.initialized = false;
@@ -34,7 +33,6 @@ class GameManager {
       // הוספת קווי ציר להתמצאות (כמו בתמונה)
       this.sceneManager.addAxisLines();
       
-      // יצירת מנהל הספרות לאחר יצירת הלוח כדי לאפשר תקשורת ביניהם
       this.digitManager = new DigitManager(this.sceneManager.scene, this.textureManager);
       this.digitManager.createDigits();
       
@@ -50,8 +48,8 @@ class GameManager {
       // עדכון הוראות עכבר
       this.updateInstructions();
       
-      // חיבור בין המנהלים להבטחת תקשורת טובה יותר
-      this.connectManagers();
+      // הוספת פוסט-פרוססינג (אפקטים ויזואליים)
+      this.setupPostProcessing();
       
       // התחלת לולאת המשחק
       this.initialized = true;
@@ -67,17 +65,6 @@ class GameManager {
       console.error("Error initializing game:", error);
       this.showErrorMessage("שגיאה באתחול המשחק. נא לרענן את הדף.");
     }
-  }
-  
-  // פונקציה חדשה להבטחת חיבור טוב בין המנהלים השונים
-  connectManagers() {
-    // ודא שמנהל הלוח מקושר לסצנה דרך userData
-    this.sceneManager.scene.userData.boardManager = this.boardManager;
-    
-    // שמור על קישור גם ב-intersection manager
-    this.interactionManager.boardManager = this.boardManager;
-    
-    console.log("Managers connected for better communication");
   }
   
   showLoadingScreen() {
@@ -199,7 +186,7 @@ class GameManager {
         <h3>מטרת המשחק</h3>
         <ul>
           <li>מקם את כל 10 הספרות על הלוח במשושים המתאימים</li>
-          <li>הספרות יוצמדו אוטומטית למשושים הקרובים ביותר</li>
+          <li>ניתן לסובב ולהפוך ספרות כדי ליצור דפוסים מעניינים</li>
         </ul>
       `;
       mobileInstructions.innerHTML = instructionsContent + `
@@ -243,13 +230,13 @@ class GameManager {
     errorDiv.style.fontFamily = 'sans-serif';
     errorDiv.style.zIndex = '1001';
     errorDiv.style.textAlign = 'center';
-    errorDiv.style.textContent = message;
+    errorDiv.textContent = message;
     
     document.body.appendChild(errorDiv);
   }
 }
 
 // אתחול המשחק כאשר ה-DOM נטען
-  document.addEventListener('DOMContentLoaded', () => {
-    const game = new GameManager();
-  });
+document.addEventListener('DOMContentLoaded', () => {
+  const game = new GameManager();
+});

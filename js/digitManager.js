@@ -1,235 +1,444 @@
 import { COLORS, BOARD_DEPTH, BOARD_WIDTH, BOARD_HEIGHT } from './constants.js';
 import * as THREE from 'three';
+import { OctagonalDigitGenerator } from './OctagonalDigitGenerator.js';
 
 export class DigitManager {
-  constructor(scene) {
+  constructor(scene, textureManager) {
     this.scene = scene;
+    this.textureManager = textureManager;
     this.digits = [];
     this.selectedDigit = null;
     this.placedDigits = {};
-  }
-
-  createDigitMesh(value) {
-    // Create digit group
-    const digitGroup = new THREE.Group();
-    digitGroup.name = `digit_${value}`;
-
-    // Digit material
-    const material = new THREE.MeshPhongMaterial({
-      color: COLORS.DIGIT,
-      specular: 0xffffff,
-      shininess: 70,
-    });
-
-    // Segment dimensions
-    const segWidth = 1.2;
-    const segHeight = 0.2;
-    const segDepth = 0.4;
-    const segSpacing = 1.5;
-
-    // 7-segment positions and visibility for each digit
-    const segments = {
-      a: {
-        pos: [0, segSpacing, 0],
-        rot: [0, 0, 0],
-        show: [0, 2, 3, 5, 6, 7, 8, 9],
-      },
-      b: {
-        pos: [segSpacing / 2, segSpacing / 2, 0],
-        rot: [0, 0, Math.PI / 2],
-        show: [0, 1, 2, 3, 4, 7, 8, 9],
-      },
-      c: {
-        pos: [segSpacing / 2, -segSpacing / 2, 0],
-        rot: [0, 0, Math.PI / 2],
-        show: [0, 1, 3, 4, 5, 6, 7, 8, 9],
-      },
-      d: {
-        pos: [0, -segSpacing, 0],
-        rot: [0, 0, 0],
-        show: [0, 2, 3, 5, 6, 8, 9],
-      },
-      e: {
-        pos: [-segSpacing / 2, -segSpacing / 2, 0],
-        rot: [0, 0, Math.PI / 2],
-        show: [0, 2, 6, 8],
-      },
-      f: {
-        pos: [-segSpacing / 2, segSpacing / 2, 0],
-        rot: [0, 0, Math.PI / 2],
-        show: [0, 4, 5, 6, 8, 9],
-      },
-      g: { 
-        pos: [0, 0, 0], 
-        rot: [0, 0, 0], 
-        show: [2, 3, 4, 5, 6, 8, 9] 
-      },
-    };
-
-    // Create segments that should be visible for this digit
-    for (const [key, seg] of Object.entries(segments)) {
-      if (seg.show.includes(value)) {
-        const geometry = new THREE.BoxGeometry(
-          segWidth,
-          segHeight,
-          segDepth
-        );
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(...seg.pos);
-        mesh.rotation.set(...seg.rot);
-        mesh.castShadow = true;
-        mesh.name = `segment_${key}`;
-        mesh.userData.parentDigit = digitGroup;
-        digitGroup.add(mesh);
-      }
-    }
-
-    // Rotate the whole digit to lie flat
-    digitGroup.rotation.x = -Math.PI / 2;
-
-    return digitGroup;
+    this.digitModels = {};
+    this.digitGenerator = new OctagonalDigitGenerator();
   }
 
   createDigits() {
-    // Calculate positions for the digits around the board
-    const boardOffset = 3; // Distance from board edge
-    
-    // Create all 10 digits
+    // קבלת הספרות והחומרים מ-generator
+    const { digits, materials } = this.digitGenerator.createAllDigits();
+
+    // חישוב מיקומים מסביב ללוח
+    const boardOffset = 3.5; // מרחק מקצה הלוח
+
+    // יצירת כל 10 הספרות במיקומים המתאימים
     for (let i = 0; i < 10; i++) {
-      const digit = this.createDigitMesh(i);
-      
-      // Calculate position based on digit index
-      let x, z;
-      
-      if (i < 5) {
-        // Position digits 0-4 on the left side of the board
-        x = -BOARD_WIDTH/2 - boardOffset;
-        z = -BOARD_HEIGHT/2 + i * (BOARD_HEIGHT / 4);
-      } else {
-        // Position digits 5-9 on the right side of the board
-        x = BOARD_WIDTH/2 + boardOffset;
-        z = -BOARD_HEIGHT/2 + (i - 5) * (BOARD_HEIGHT / 4);
+      const digit = digits[i];
+
+      // חישוב מיקום לפי אינדקס הספרה
+      let x, y, z;
+
+      if (i < 3) {
+        // ספרות 0-4 בצד שמאל של הלוח
+        x = -BOARD_WIDTH / 2 - boardOffset;
+        y = BOARD_DEPTH / 2;
+        z = -BOARD_HEIGHT / 2 + i * (BOARD_HEIGHT / 2.4);
       }
+      // ספרות 4 עד 7 בצד העליון של הלוח
+      else if (i < 4) {
+        x = -BOARD_WIDTH / 2 - boardOffset;
+        y = BOARD_DEPTH / 2;
+        z = -BOARD_HEIGHT / 2 + (i - 3) * (BOARD_HEIGHT / 2.4);
+      }
+      //  ספרות 7 עד 9 בצד התחתון של הלוח
+        else if (i < 7) {
+          x = -BOARD_WIDTH / 2 - boardOffset;
+          y = BOARD_DEPTH / 2;
+          z = -BOARD_HEIGHT / 2 + (i - 6) * (BOARD_HEIGHT / 2.4);
+        }
+
+        // ספרות 9 עד 10 בצד הימני של הלוח  
+        else {
+          x = BOARD_WIDTH / 2 + boardOffset;
+          y = BOARD_DEPTH / 2;
+          z = -BOARD_HEIGHT / 2 + (i - 5) * (BOARD_HEIGHT / 4);
+        }
       
-      digit.userData = {
-        value: i,
-        placed: false,
-        originalPosition: new THREE.Vector3(x, 1, z),
-        rotation: 0,
-        flipped: false,
-        // Store the initial x-rotation to maintain the flat orientation
-        initialXRotation: -Math.PI / 2
-      };
-      
+
+      // הגדרת מיקום התחלתי
+      digit.userData.originalPosition = new THREE.Vector3(x, y, z);
       digit.position.copy(digit.userData.originalPosition);
+
+      // הוספת אפקט ריחוף וזוהר
+      this.addFloatingEffect(digit);
+
+      // הוספה לסצנה ולמערכים פנימיים
       this.scene.add(digit);
       this.digits.push(digit);
+      this.digitModels[i] = digit;
     }
-    
+
+    // שמירת החומרים לשימוש בהמשך
+    this.materials = materials;
+
     return this.digits;
   }
 
+  addFloatingEffect(digit) {
+    // הוספת אנימציית ריחוף לספרות שאינן מוצבות
+    const value = digit.userData.value;
+
+    // הוספת זוהר עדין
+    const glowGeometry = new THREE.RingGeometry(1.5, 1.55, 32);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x4285f4,
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending
+    });
+
+    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+    glow.position.y = -0.2;
+    glow.rotation.x = Math.PI / 2;
+    digit.add(glow);
+
+    // יצירת אנימציית ריחוף
+    const animateFloat = () => {
+      if (!digit.userData.placed) {
+        const time = Date.now() * 0.001;
+        const floatAmount = Math.sin(time + value) * 0.1;
+        const rotationAmount = Math.sin(time * 0.5 + value) * 0.03;
+
+        // תנועת ריחוף
+        digit.position.y = digit.userData.originalPosition.y + floatAmount;
+
+        // סיבוב עדין לתחושת "חיות"
+        if (!this.selectedDigit || this.selectedDigit !== digit) {
+          digit.rotation.z = rotationAmount;
+        }
+
+        // המשך האנימציה
+        requestAnimationFrame(animateFloat);
+      }
+    };
+
+    // התחלת האנימציה
+    animateFloat();
+  }
+
   selectDigit(value) {
-    // If digit already placed, can't select it
+    // אם הספרה כבר הוצבה, לא ניתן לבחור בה
     if (this.digits[value].userData.placed) {
       return;
     }
 
-    // Deselect previous digit if any
+    // ביטול בחירה קודמת
     if (this.selectedDigit) {
+      // החזרת החומר הרגיל
       this.selectedDigit.children.forEach((seg) => {
-        seg.material.color.setHex(COLORS.DIGIT);
+        if (seg.isMesh && seg.material && !seg.name.includes('glow')) {
+          seg.material = this.materials.normal.clone();
+        }
       });
+
+      // אנימציית הקטנה קלה
+      this.animateScale(this.selectedDigit, 1, 0.95, 150);
     }
 
-    // Select new digit
+    // בחירת ספרה חדשה
     this.selectedDigit = this.digits[value];
 
-    // Change selected digit color
+    // שינוי מראה הספרה הנבחרת
     this.selectedDigit.children.forEach((seg) => {
-      seg.material.color.setHex(COLORS.SELECTED_DIGIT);
+      if (seg.isMesh && seg.material && !seg.name.includes('glow')) {
+        seg.material = this.materials.selected.clone();
+      }
     });
-    
+
+    // אנימציית בחירה
+    this.animateScale(this.selectedDigit, 0.95, 1.1, 200);
+
     return this.selectedDigit;
   }
 
+  animateScale(object, startScale, endScale, duration) {
+    const startTime = Date.now();
+
+    const animate = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+
+      if (elapsed < duration) {
+        const progress = elapsed / duration;
+        const scale = startScale + (endScale - startScale) * progress;
+
+        object.scale.set(scale, scale, scale);
+
+        requestAnimationFrame(animate);
+      } else {
+        object.scale.set(endScale, endScale, endScale);
+      }
+    };
+
+    animate();
+  }
+
   placeDigit(digit, position) {
-    // Ensure digit is not already placed
+    // ודא שהספרה אינה מוצבת כבר
     if (digit.userData.placed) {
       return;
     }
 
-    // Get proper digit reference
+    // קבלת הפנייה הנכונה לספרה
     const parentDigit = digit.userData.parentDigit || digit;
     const digitValue = parentDigit.userData.value;
 
-    // Position the digit on the board
+    // מיקום הספרה על הלוח
     parentDigit.position.copy(position);
-    parentDigit.position.y = BOARD_DEPTH / 2 + 0.1; // Position slightly above board
+    parentDigit.position.y = BOARD_DEPTH / 2 + 0.2; // מיקום מעט מעל הלוח
 
-    // Mark digit as placed
+    // הוספת אנימציית הצבה
+    this.animateDigitPlacement(parentDigit);
+
+    // סימון הספרה כמוצבת
     parentDigit.userData.placed = true;
     this.placedDigits[digitValue] = parentDigit;
 
-    // Changed color to placed color
+    // שינוי מראה לסמן סטטוס מוצב
     parentDigit.children.forEach((seg) => {
-      seg.material.color.setHex(COLORS.PLACED_DIGIT);
+      if (seg.isMesh && seg.material && !seg.name.includes('glow')) {
+        seg.material = this.materials.placed.clone();
+      }
     });
 
-    // Reset selection
+    // איפוס בחירה
     if (this.selectedDigit === parentDigit) {
       this.selectedDigit = null;
     }
 
+    // השמעת סאונד הצבה
+    this.playPlacementSound();
+
     return true;
+  }
+
+  animateDigitPlacement(digit) {
+    // אנימציית הצבת ספרה - אפקט קפיצה קלה
+    const startY = digit.position.y + 0.5; // התחלה מעט גבוה יותר
+    const endY = digit.position.y;
+    const duration = 300; // מילישניות
+    const startTime = Date.now();
+
+    // שמירת סקייל מקורי
+    const originalScale = digit.scale.clone();
+
+    // מעיכה קלה בסוף
+    const animatePosition = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // פונקציית ריכוך - קפיצה
+      const bounce = (t) => {
+        return --t * t * ((1.7 + 1) * t + 1.7) + 1;
+      };
+
+      // חישוב מיקום Y עם אפקט קפיצה
+      const currentY = startY - (startY - endY) * bounce(progress);
+      digit.position.y = currentY;
+
+      // הוספת אפקט מעיכה קלה בסוף
+      if (progress > 0.8) {
+        const squashFactor = 1 + Math.sin((progress - 0.8) * 5 * Math.PI) * 0.15;
+        digit.scale.set(
+          originalScale.x * squashFactor,
+          originalScale.y * (squashFactor),
+          originalScale.z * squashFactor
+        );
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animatePosition);
+      } else {
+        // ודא מיקום וסקייל סופי
+        digit.position.y = endY;
+        digit.scale.copy(originalScale);
+      }
+    };
+
+    // התחלת האנימציה
+    digit.position.y = startY;
+    animatePosition();
   }
 
   rotateSelectedDigit(direction) {
     if (!this.selectedDigit) return;
 
-    // Rotate in 90-degree increments around the y-axis while maintaining the horizontal position
-    this.selectedDigit.userData.rotation += (direction * Math.PI) / 2;
-    
-    // Apply the rotation while preserving the x-rotation that makes the digit lie flat
-    this.selectedDigit.rotation.y = this.selectedDigit.userData.rotation;
-    this.selectedDigit.rotation.x = this.selectedDigit.userData.initialXRotation;
+    // שמירת הסיבוב הקודם
+    const prevRotation = this.selectedDigit.userData.rotation;
+
+    // סיבוב ב-90 מעלות סביב ציר ה-y תוך שמירה על המנח האופקי
+    const targetRotation = prevRotation + (direction * Math.PI);
+    this.selectedDigit.userData.rotation = targetRotation;
+
+    // אנימציית סיבוב
+    this.animateRotation(this.selectedDigit, prevRotation, targetRotation, 150);
+  }
+
+  animateRotation(digit, startRotation, targetRotation, duration) {
+    const startTime = Date.now();
+
+    const animate = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // ריכוך חלק
+      const easeInOut = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const currentRotation = startRotation + (targetRotation - startRotation) * easeInOut(progress);
+
+      // איפוס הסיבוב תחילה למניעת סיבובים מצטברים
+      digit.rotation.set(0, 0, 0);
+
+      // קודם כל, הגדרת סיבוב X הנכון לשמירה על הספרה שטוחה
+      digit.rotateX(digit.userData.initialXRotation);
+
+      // לאחר מכן הוספת סיבוב ה-Z
+      digit.rotateZ(currentRotation);
+
+      // הוספת היפוך במידת הצורך
+      if (digit.userData.flipped) {
+        digit.rotateY(Math.PI);
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    animate();
   }
 
   flipSelectedDigit() {
     if (!this.selectedDigit) return;
 
-    // Flip digit (rotate 180 degrees around the z-axis)
-    this.selectedDigit.userData.flipped = !this.selectedDigit.userData.flipped;
+    // שמירת מצב ההיפוך הנוכחי
+    const wasFlipped = this.selectedDigit.userData.flipped;
 
-    if (this.selectedDigit.userData.flipped) {
-      this.selectedDigit.rotation.z = Math.PI;
-    } else {
-      this.selectedDigit.rotation.z = 0;
-    }
-    
-    // Maintain the horizontal orientation
-    this.selectedDigit.rotation.x = this.selectedDigit.userData.initialXRotation;
+    // היפוך הספרה (סיבוב ב-180 מעלות סביב ציר ה-Y)
+    this.selectedDigit.userData.flipped = !wasFlipped;
+
+    // אנימציית היפוך
+    this.animateFlip(this.selectedDigit, 600);
+  }
+
+  animateFlip(digit, duration) {
+    const startTime = Date.now();
+    const targetY = digit.userData.flipped ? Math.PI : 0;
+
+    // שמירת מצב נוכחי
+    const startY = targetY === 0 ? Math.PI : 0;
+    const currentRotZ = digit.rotation.z;
+    const initialXRotation = digit.userData.initialXRotation;
+
+    const animate = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // ריכוך אנימציה
+      const easeOutBack = t => {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+      };
+
+      // חישוב סיבוב נוכחי
+      const currentY = startY + (targetY - startY) * easeOutBack(progress);
+
+      // איפוס והחלת כל הסיבובים
+      digit.rotation.set(0, 0, 0);
+      digit.rotateX(initialXRotation);
+      digit.rotateZ(currentRotZ);
+      digit.rotateY(currentY);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    animate();
   }
 
   resetDigits() {
-    // Reset all digits to original positions
+    // איפוס כל הספרות למיקומן המקורי עם אנימציה
     this.digits.forEach((digit) => {
-      digit.position.copy(digit.userData.originalPosition);
-      
-      // Reset rotation while maintaining the horizontal orientation
-      digit.rotation.set(digit.userData.initialXRotation, 0, 0);
+      // אנימציית חזרה למיקום המקורי
+      this.animateMove(digit, digit.position.clone(), digit.userData.originalPosition, 500);
+
+      // איפוס סיבוב תוך שמירה על האוריינטציה האופקית
+      digit.rotation.set(0, 0, 0);
+      digit.rotateX(digit.userData.initialXRotation);
       digit.userData.placed = false;
       digit.userData.rotation = 0;
       digit.userData.flipped = false;
 
-      // Reset color
+      // איפוס צבע וסקייל
       digit.children.forEach((seg) => {
-        seg.material.color.setHex(COLORS.DIGIT);
+        if (seg.isMesh && seg.material && !seg.name.includes('glow')) {
+          seg.material = this.materials.normal.clone();
+        }
       });
+
+      digit.scale.set(1, 1, 1);
     });
 
-    // Reset game state
+    // איפוס מצב המשחק
     this.selectedDigit = null;
     this.placedDigits = {};
+  }
+
+  animateMove(object, startPos, endPos, duration) {
+    const startTime = Date.now();
+
+    const animate = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // ריכוך קוביק
+      const easeOut = t => 1 - Math.pow(1 - t, 3);
+      const t = easeOut(progress);
+
+      // עדכון מיקום
+      object.position.lerpVectors(startPos, endPos, t);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // ודא שהמיקום הסופי הוא בדיוק היעד
+        object.position.copy(endPos);
+      }
+    };
+
+    animate();
+  }
+
+  playPlacementSound() {
+    // יצירת אפקט סאונד פשוט להצבה
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      // יצירת אוסילטור לסאונד "קליק"
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.1);
+
+      // יצירת נוד לבקרת ווליום
+      const gainNode = audioContext.createGain();
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+
+      // חיבור נודים
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // נגינה ועצירה לאחר זמן קצר
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      // כישלון שקט אם אודיו לא זמין
+      console.log("Audio not available for sound effects");
+    }
   }
 }

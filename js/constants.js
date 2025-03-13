@@ -9,12 +9,12 @@ export const COLORS = {
   BACKGROUND: 0xe6f0ff,
 };
 
-// Board and grid dimensions
+// Board and grid dimensions - עודכן לסידור טוב יותר של המשושים
 export const GRID_SIZE = 2;
-export const GRID_OFFSET_X = -4;
-export const GRID_OFFSET_Z = -3;
-export const BOARD_WIDTH = 10;
-export const BOARD_HEIGHT = 8;
+export const GRID_OFFSET_X = -4; // משאיר ללא שינוי
+export const GRID_OFFSET_Z = -3; // משאיר ללא שינוי
+export const BOARD_WIDTH = 11;
+export const BOARD_HEIGHT = 9;
 export const BOARD_DEPTH = 0.5;
 export const GRID_COLS = 5;
 export const GRID_ROWS = 4;

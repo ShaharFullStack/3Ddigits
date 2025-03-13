@@ -1,5 +1,6 @@
-import { BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH } from './constants.js';
 import * as THREE from 'three';
+import { BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH } from './constants.js';
+
 export class InteractionManager {
   constructor(sceneManager, boardManager, digitManager) {
     this.sceneManager = sceneManager;
@@ -17,9 +18,14 @@ export class InteractionManager {
     this.touchStartPosition = { x: 0, y: 0 };
     this.touchStartTime = 0;
     this.lastRightClickTime = 0;
+    
+    // Variables for tracking drag height
+    this.initialDragHeight = 0;
+    this.dragHeightModifier = 0;
+    
+    // Initial mouse position for calculating movement
+    this.lastMouseY = 0;
   }
-
-  // Other methods remain the same...
 
   onMouseWheel(event) {
     // If a digit is selected, use the wheel to rotate it
@@ -28,15 +34,10 @@ export class InteractionManager {
       event.preventDefault();
       
       // Determine direction based on deltaY (positive is scroll down, negative is scroll up)
-      const direction = event.deltaY > 0 ? 1 : -1;
+      const direction = event.deltaY > 0 ? 0.5 : -0.5;
       
-      // Rotate the digit (smaller rotation increments for smoother experience)
-      const rotationAmount = direction * (Math.PI / 12); // 15 degree increments
-      this.digitManager.selectedDigit.userData.rotation += rotationAmount;
-      
-      // Apply rotation while preserving the horizontal orientation
-      this.digitManager.selectedDigit.rotation.y = this.digitManager.selectedDigit.userData.rotation;
-      this.digitManager.selectedDigit.rotation.x = this.digitManager.selectedDigit.userData.initialXRotation;
+      // Use the proper rotation method from digitManager
+      this.digitManager.rotateSelectedDigit(direction);
       
       // If shift is pressed, flip the digit instead
       if (event.shiftKey) {
@@ -51,17 +52,21 @@ export class InteractionManager {
     document.getElementById("canvas").addEventListener("mousedown", this.onMouseDown.bind(this));
     document.getElementById("canvas").addEventListener("mousemove", this.onMouseMove.bind(this));
     document.getElementById("canvas").addEventListener("mouseup", this.onMouseUp.bind(this));
-    document.getElementById("canvas").addEventListener("wheel", this.onMouseWheel.bind(this));
+    
+    // Add passive: false option to wheel event listener
+    document.getElementById("canvas").addEventListener("wheel", this.onMouseWheel.bind(this), { passive: false });
+    
     document.getElementById("canvas").addEventListener("contextmenu", this.onRightClick.bind(this));
 
     // Game control listeners
     document.getElementById("resetButton").addEventListener("click", this.resetGame.bind(this));
     document.getElementById("closeMessage").addEventListener("click", this.closeMessage.bind(this));
 
-    // Touch screen listeners
+    // Touch screen listeners - with passive: false for touch events that prevent default behavior
     document.getElementById("canvas").addEventListener("touchstart", this.onTouchStart.bind(this), { passive: false });
     document.getElementById("canvas").addEventListener("touchmove", this.onTouchMove.bind(this), { passive: false });
     document.getElementById("canvas").addEventListener("touchend", this.onTouchEnd.bind(this), { passive: false });
+    
     document.getElementById("mobileCameraBtn").addEventListener("click", this.toggleCameraMode.bind(this));
     document.getElementById("mobileZoomInBtn").addEventListener("click", () => this.sceneManager.adjustZoom(0.9));
     document.getElementById("mobileZoomOutBtn").addEventListener("click", () => this.sceneManager.adjustZoom(1.1));
@@ -85,27 +90,6 @@ export class InteractionManager {
     }
     
     return false;
-  }
-  
-  onMouseWheel(event) {
-    // If a digit is selected, use the wheel to rotate it
-    if (this.digitManager.selectedDigit) {
-      // Prevent default scrolling behavior
-      event.preventDefault();
-      
-      // Determine direction based on deltaY (positive is scroll down, negative is scroll up)
-      const direction = event.deltaY > 0 ? 1 : -1;
-      
-      // Rotate the digit (smaller rotation increments for smoother experience)
-      const rotationAmount = direction * (Math.PI / 12); // 15 degree increments
-      this.digitManager.selectedDigit.userData.rotation += rotationAmount;
-      this.digitManager.selectedDigit.rotation.y = this.digitManager.selectedDigit.userData.rotation;
-      
-      // If shift is pressed, flip the digit instead
-      if (event.shiftKey) {
-        this.digitManager.flipSelectedDigit();
-      }
-    }
   }
 
   onWindowResize() {
@@ -279,18 +263,29 @@ export class InteractionManager {
   startDragging(digit) {
     this.isDragging = true;
     
-    // Calculate drag plane and offset
-    const boardIntersection = this.getIntersectionWithBoard();
-    if (boardIntersection) {
-      this.dragPlane.setFromNormalAndCoplanarPoint(
-        new THREE.Vector3(0, 1, 0),
-        boardIntersection.point
-      );
-      
-      const planeIntersection = new THREE.Vector3();
-      this.raycaster.ray.intersectPlane(this.dragPlane, planeIntersection);
-      this.dragOffset.subVectors(digit.position, planeIntersection);
-    }
+    // Save initial digit position including height
+    this.initialDragHeight = digit.position.y;
+    this.dragHeightModifier = 0;
+    
+    // Create a drag plane that's parallel to the camera view
+    // This ensures we can drag in any direction relative to the camera
+    const cameraDirection = new THREE.Vector3(0, 0, -1);
+    cameraDirection.applyQuaternion(this.sceneManager.camera.quaternion);
+    
+    // Create plane perpendicular to the camera ray at the digit's position
+    this.dragPlane = new THREE.Plane();
+    this.dragPlane.setFromNormalAndCoplanarPoint(
+      cameraDirection,
+      digit.position
+    );
+    
+    // Calculate the offset from the digit position to maintain during drag
+    const planeIntersection = new THREE.Vector3();
+    this.raycaster.ray.intersectPlane(this.dragPlane, planeIntersection);
+    this.dragOffset.subVectors(digit.position, planeIntersection);
+    
+    // Store the current mouse Y position for height calculations
+    this.lastMouseY = this.mouse.y;
   }
 
   onMouseMove(event) {
@@ -303,49 +298,55 @@ export class InteractionManager {
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    // Use drag plane to calculate new position
-    this.raycaster.setFromCamera(this.mouse, this.sceneManager.camera);
+    // Update the drag plane to face the camera (ensures drag follows mouse in screen space)
+    const cameraDirection = new THREE.Vector3(0, 0, -1);
+    cameraDirection.applyQuaternion(this.sceneManager.camera.quaternion);
+    this.dragPlane.setFromNormalAndCoplanarPoint(
+      cameraDirection, 
+      this.digitManager.selectedDigit.position
+    );
 
+    // Calculate intersection with drag plane
+    this.raycaster.setFromCamera(this.mouse, this.sceneManager.camera);
     const planeIntersection = new THREE.Vector3();
     if (this.raycaster.ray.intersectPlane(this.dragPlane, planeIntersection)) {
-      // Update digit position with offset
-      this.digitManager.selectedDigit.position.copy(planeIntersection.add(this.dragOffset));
-
-      // Keep digit above board
-      this.digitManager.selectedDigit.position.y = Math.max(
-        this.digitManager.selectedDigit.position.y,
-        BOARD_DEPTH / 2 + 0.1
-      );
+      // Adjust position by the original offset to maintain grab point
+      planeIntersection.add(this.dragOffset);
+      
+      // Update X and Z coordinates from the intersection
+      this.digitManager.selectedDigit.position.x = planeIntersection.x;
+      this.digitManager.selectedDigit.position.z = planeIntersection.z;
+      
+      // Calculate height change based on mouse Y movement
+      const mouseYDelta = this.mouse.y - this.lastMouseY;
+      this.dragHeightModifier += mouseYDelta * 5; // Adjust sensitivity as needed
+      
+      // Update height with minimum constraint
+      const newHeight = this.initialDragHeight + this.dragHeightModifier;
+      const minHeight = BOARD_DEPTH / 2 + 0.1;
+      this.digitManager.selectedDigit.position.y = Math.max(newHeight, minHeight);
+      
+      // Update last mouse position for next movement
+      this.lastMouseY = this.mouse.y;
     }
   }
 
   onMouseUp(event) {
     if (this.isDragging && this.digitManager.selectedDigit) {
-      // Check if digit is over the board
-      const boardIntersection = this.getIntersectionWithBoard();
-      if (boardIntersection) {
-        // Check if digit is within board boundaries
-        const boardWidth = BOARD_WIDTH / 2;
-        const boardHeight = BOARD_HEIGHT / 2;
-
-        if (
-          Math.abs(boardIntersection.point.x) < boardWidth &&
-          Math.abs(boardIntersection.point.z) < boardHeight
-        ) {
-          // Place the digit
-          this.digitManager.placeDigit(this.digitManager.selectedDigit, boardIntersection.point);
-          
-          // Update game state
-          this.updateProgressBar();
-          this.checkGameCompletion();
-        } else {
-          // Return digit to original position if outside board
-          this.digitManager.selectedDigit.position.copy(
-            this.digitManager.selectedDigit.userData.originalPosition
-          );
-        }
+      // Check if the digit should be placed on the board
+      const isOverBoard = Math.abs(this.digitManager.selectedDigit.position.x) < BOARD_WIDTH/2 && 
+                          Math.abs(this.digitManager.selectedDigit.position.z) < BOARD_HEIGHT/2;
+      
+      if (isOverBoard) {
+        // Place the digit at its current position
+        const currentPosition = this.digitManager.selectedDigit.position.clone();
+        this.digitManager.placeDigit(this.digitManager.selectedDigit, currentPosition);
+        
+        // Update game state
+        this.updateProgressBar();
+        this.checkGameCompletion();
       } else {
-        // Return digit to original position
+        // Return digit to original position if outside board
         this.digitManager.selectedDigit.position.copy(
           this.digitManager.selectedDigit.userData.originalPosition
         );
@@ -354,6 +355,7 @@ export class InteractionManager {
 
     // Reset drag state
     this.isDragging = false;
+    this.dragHeightModifier = 0;
     
     // Re-enable camera controls
     this.sceneManager.controls.enabled = true;
@@ -417,25 +419,55 @@ export class InteractionManager {
       this.mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
       this.mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
-      // Handle like mouse move
-      this.onMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+      // Handle like mouse move but adapt for touch-specific behavior
+      if (this.isDragging && this.digitManager.selectedDigit) {
+        // Update the drag plane for camera-relative movement
+        const cameraDirection = new THREE.Vector3(0, 0, -1);
+        cameraDirection.applyQuaternion(this.sceneManager.camera.quaternion);
+        this.dragPlane.setFromNormalAndCoplanarPoint(
+          cameraDirection, 
+          this.digitManager.selectedDigit.position
+        );
+
+        // Calculate intersection with drag plane
+        this.raycaster.setFromCamera(this.mouse, this.sceneManager.camera);
+        const planeIntersection = new THREE.Vector3();
+        if (this.raycaster.ray.intersectPlane(this.dragPlane, planeIntersection)) {
+          // Adjust position by the original offset
+          planeIntersection.add(this.dragOffset);
+          
+          // Update X and Z coordinates from the intersection
+          this.digitManager.selectedDigit.position.x = planeIntersection.x;
+          this.digitManager.selectedDigit.position.z = planeIntersection.z;
+          
+          // Calculate height based on touch movement
+          const touchYDelta = this.touchStartPosition.y - touch.clientY;
+          const heightChange = touchYDelta * 0.02; // Sensitivity factor
+          
+          // Update height with constraints
+          const newHeight = this.initialDragHeight + heightChange;
+          const minHeight = BOARD_DEPTH / 2 + 0.1;
+          this.digitManager.selectedDigit.position.y = Math.max(newHeight, minHeight);
+        }
+      }
     } else if (event.touches.length === 2 && this.digitManager.selectedDigit) {
-      // Two-finger touch for rotation
+      // Two-finger touch handling for rotation (unchanged)
       const touch1 = event.touches[0];
       const touch2 = event.touches[1];
       
-      // Calculate current angle between touches
       const currentAngle = Math.atan2(
         touch2.clientY - touch1.clientY,
         touch2.clientX - touch1.clientX
       );
       
-      // Calculate angle difference
       const angleDiff = currentAngle - this.initialTouchAngle;
+      const steps = Math.round(angleDiff / (Math.PI / 12));
       
-      // Apply rotation
-      this.digitManager.selectedDigit.userData.rotation = this.initialDigitRotation + angleDiff;
-      this.digitManager.selectedDigit.rotation.y = this.digitManager.selectedDigit.userData.rotation;
+      if (steps !== 0) {
+        this.digitManager.rotateSelectedDigit(steps);
+        this.initialTouchAngle = currentAngle;
+        this.initialDigitRotation = this.digitManager.selectedDigit.userData.rotation;
+      }
     }
   }
 
