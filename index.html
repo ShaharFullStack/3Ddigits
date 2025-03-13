@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digit Placement Game</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+
+    <div id="gameUI">
+      <div id="progressBarContainer">
+        <div id="progressFill"></div>
+      </div>
+
+      <!-- Control buttons removed -->
+
+      <button id="resetButton">Reset Game</button>
+    </div>
+
+    <div id="mobileControls">
+      <button id="mobileCameraBtn" class="mobileButton">🔄</button>
+      <button id="mobileZoomInBtn" class="mobileButton">+</button>
+      <button id="mobileZoomOutBtn" class="mobileButton">-</button>
+    </div>
+
+    <button id="instructionsButton">?</button>
+
+    <div id="messageBox">
+      <h2>Great Job!</h2>
+      <p>You've successfully placed all digits on the board.</p>
+      <button id="closeMessage">Close</button>
+    </div>
+
+    <div id="mobileInstructions">
+      <h2>Game Instructions</h2>
+      <h3>Mobile Controls</h3>
+      <ul>
+        <li><strong>🔄</strong> - Toggle between camera mode and drag mode</li>
+        <li><strong>+/-</strong> - Zoom in/out</li>
+        <li>
+          In camera mode, use one finger to rotate view, two fingers to pan
+        </li>
+        <li>In drag mode, tap a digit to select it and drag to place</li>
+      </ul>
+      <button id="closeMobileInstructions">Close</button>
+    </div>
+
+    <!-- Load Three.js library -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.152.0/build/three.module.js",
+          "three/addons/controls/OrbitControls": "https://unpkg.com/three@0.152.0/examples/jsm/controls/OrbitControls.js"
+        }
+      }
+    </script>
+
+    <!-- Load game modules -->
+    <script type="module" src="js/gameManager.js"></script>
+  </body>
+</html>

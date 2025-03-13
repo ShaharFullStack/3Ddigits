@@ -1,0 +1,230 @@
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+#canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+#gameUI {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#digitsContainer {
+  display: flex;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  pointer-events: auto;
+}
+
+.digitButton {
+  width: 40px;
+  height: 40px;
+  margin: 0 5px;
+  border: 2px solid #4285f4;
+  background-color: white;
+  color: #4285f4;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.digitButton:hover {
+  background-color: #e9f0fe;
+}
+
+.digitButton.selected {
+  background-color: #4285f4;
+  color: white;
+}
+
+.digitButton.placed {
+  background-color: #34a853;
+  border-color: #34a853;
+  color: white;
+  cursor: default;
+}
+
+/* Control buttons container and buttons removed */
+
+#progressBarContainer {
+  width: 80%;
+  max-width: 500px;
+  height: 20px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+#progressFill {
+  height: 100%;
+  width: 0%;
+  background-color: #34a853;
+  transition: width 0.3s;
+}
+
+#resetButton {
+  padding: 8px 15px;
+  background-color: #ea4335;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#resetButton:hover {
+  background-color: #d33426;
+}
+
+#messageBox {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  display: none;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+#messageBox h2 {
+  color: #34a853;
+  margin-top: 0;
+}
+
+#closeMessage {
+  padding: 8px 15px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#mobileControls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.mobileButton {
+  width: 50px;
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid #4285f4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #4285f4;
+  cursor: pointer;
+}
+
+#instructionsButton {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid #4285f4;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #4285f4;
+  cursor: pointer;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+#mobileInstructions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  display: none;
+  z-index: 20;
+  pointer-events: auto;
+  max-width: 80%;
+  max-height: 80%;
+  overflow-y: auto;
+}
+
+#closeMobileInstructions {
+  padding: 8px 15px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 768px) {
+  .digitButton {
+    width: 30px;
+    height: 30px;
+    margin: 0 3px;
+    font-size: 16px;
+  }
+  
+  #progressBarContainer {
+    width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .digitButton {
+    width: 25px;
+    height: 25px;
+    margin: 0 2px;
+    font-size: 14px;
+  }
+  
+  #gameUI {
+    bottom: 10px;
+  }
+  
+  #progressBarContainer {
+    height: 15px;
+  }
+}
