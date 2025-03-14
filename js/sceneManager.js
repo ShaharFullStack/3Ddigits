@@ -28,7 +28,7 @@ export class SceneManager {
             0.1,
             1000
         );
-        this.camera.position.set(0, 10, 12);
+        this.camera.position.set(0, 20, 22);
 
         // Create environment map for reflections
         this.createEnvironmentMap();
@@ -43,7 +43,7 @@ export class SceneManager {
         this.controls.screenSpacePanning = false;
         this.controls.maxPolarAngle = Math.PI / 2.1; // Prevent going below the floor
         this.controls.minDistance = 5;
-        this.controls.maxDistance = 25;
+        this.controls.maxDistance = 105;
         this.controls.target.set(0, 0, 0);
         this.controls.zoomSpeed = 0.7;
         this.controls.rotateSpeed = 0.7;

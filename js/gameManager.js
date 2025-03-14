@@ -4,6 +4,7 @@ import { InteractionManager } from './interactionManager.js';
 import { SceneManager } from './sceneManager.js';
 import { TextureManager } from './texture-manager.js';
 import { UIManager } from './uiManager.js';
+import * as THREE from 'three';
 
 
 class GameManager {
